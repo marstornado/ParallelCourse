@@ -1,0 +1,173 @@
+/*
+ * queue.c, implemetation of queue.h
+ * F00227J
+ * Beitong Zhang
+ */
+#include "queue.h"
+#include <string.h>
+#include <stdlib.h>
+
+//node in the queue, containing the element and a pointer to next node
+typedef struct node
+{
+	void * elmt;
+	struct node * next;
+}Node;
+
+//create an empty queue
+public void * qopen()
+{
+	Node * head=malloc(sizeof(Node));
+    ((Node *)head)->elmt=NULL;
+    ((Node *)head)->next=NULL;
+	return head;
+}
+//deallocate a queue
+public void qclose(void * head)
+{
+	while(head!=NULL)
+	{
+		Node * temp = head;
+		head=((Node*)head)->next;
+		free(temp);
+	}
+	return;
+}
+//put element at end of queue
+public void qput(void *qp, void *elementp)
+{
+    if (((Node *)qp)->elmt==NULL) {
+        ((Node *)qp)->elmt=elementp;
+        ((Node *)qp)->next=NULL;
+        return;
+    }
+    Node * temp=malloc(sizeof(Node));
+    temp->elmt=elementp;
+    temp->next=NULL;
+	while(((Node *)qp)->next!=NULL)
+		qp=((Node *)qp)->next;
+	((Node *)qp)->next=temp;
+}
+//get first element
+public void* qget(void *qp)
+{
+	if(((Node*)qp)->elmt==NULL)
+		return NULL;
+	if(((Node*)qp)->next==NULL)
+	{
+		void * result = ((Node*)qp)->elmt;
+		((Node*)qp)->elmt=NULL;
+		return result;
+	}
+	Node * temp = ((Node*)qp)->next;
+	void * result = ((Node*)qp)->elmt;
+	((Node*)qp)->elmt=temp->elmt;
+	((Node*)qp)->next=temp->next;
+	free(temp);
+	return result;
+}
+//apply function to elements
+public void qapply(void *qp, void (*fn)(void * elementp))
+{
+	while(qp!=NULL)
+	{
+		fn(((Node*)qp)->elmt);
+		qp=((Node*)qp)->next;
+	}
+	return;
+}
+//search a queue
+public void* qsearch(void *qp,int (*searchfn)(void* elementp, void* keyp),void* skeyp)
+{
+	if(((Node*)qp)->elmt==NULL)
+		return NULL;
+	while(qp!=NULL)
+	{
+		if(searchfn(((Node*)qp)->elmt, skeyp)!=0)
+		{
+			return ((Node*)qp)->elmt;
+		}
+		else
+		{
+			qp=((Node*)qp)->next;
+		}
+	}
+	return NULL;
+}
+
+public void* qremove(void *qp,int (*searchfn)(void* elementp, void* keyp),void* skeyp)
+{
+	if (qp==NULL)
+    {
+        return NULL;
+    }
+	if(((Node*)qp)->elmt==NULL)
+		return NULL;
+	void * result;
+    void * preNode=NULL;
+    //find the element in the first node
+	if (searchfn(((Node*)qp)->elmt,skeyp)!=0)
+    {
+		if(((Node*)qp)->next==NULL)
+		{
+			void * result = ((Node*)qp)->elmt;
+			((Node*)qp)->elmt=NULL;
+			return result;
+		}
+		Node * temp = ((Node*)qp)->next;
+		void * result = ((Node*)qp)->elmt;
+		((Node*)qp)->elmt=temp->elmt;
+		((Node*)qp)->next=temp->next;
+		free(temp);
+		return result;
+    }
+    preNode=qp;
+    qp=((Node*)qp)->next;
+    //find the element in the rest of the queue
+    while(qp!=NULL)
+	{
+		if(searchfn(((Node*)qp)->elmt,skeyp)!=0)//find it and remove!
+        {
+			result=((Node*)qp)->elmt;
+            ((Node*)preNode)->next=((Node*)qp)->next;
+            free(qp);
+            return result;
+        }
+        else//not match, move to the next Node
+        {
+            qp=((Node*)qp)->next;
+            preNode=((Node*)preNode)->next;
+        }
+    }
+    return NULL;
+}
+
+/* concatenatenates q2 onto q1, q2 may not be subsequently used */
+public void qconcat(void *q1p, void *q2p)
+{
+	if(((Node *)q2p)->elmt==NULL)
+	{
+		return;
+	}
+	//if q1p is empty
+	if(((Node *)q1p)->elmt==NULL)
+	{	
+		((Node *)q1p)->elmt=((Node *)q2p)->elmt;
+		((Node *)q1p)->next=((Node *)q2p)->next;
+		return;
+	}
+    while(((Node *)q1p)->next!=NULL)
+        q1p=((Node *)q1p)->next;
+    ((Node *)q1p)->next=q2p;
+	return;
+}
+
+public void qapply_arg(void *qp, void (*fn)(void * elementp,void *arg),void *args)
+{
+    while(qp!=NULL&&((Node*)qp)->elmt!=NULL)
+    {
+        fn(((Node*)qp)->elmt,args);
+        qp=((Node*)qp)->next;
+    }
+    return;
+}
